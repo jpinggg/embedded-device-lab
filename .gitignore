@@ -1,0 +1,26 @@
+# Build output
+build/
+out/
+dist/
+generated/
+
+# Compiler and linker artifacts
+*.o
+*.obj
+*.elf
+*.map
+*.hex
+*.bin
+
+# Local tools and editors
+.vscode/
+.idea/
+*.log
+
+# Secrets and local configuration
+.env
+secrets/
+*.key
+*.pem
+*.p12
+
