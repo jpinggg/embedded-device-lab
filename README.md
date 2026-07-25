@@ -17,7 +17,7 @@ The project will separate the host update tool from the device simulator so that
 
 ## Current Status
 
-Repository setup and requirements definition are in progress. No device-update implementation has been completed yet.
+Repository safeguards and initial requirements are complete. Implementation planning is still in progress.
 
 ## Public-Safety Boundary
 
