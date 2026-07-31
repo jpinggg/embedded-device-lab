@@ -17,7 +17,35 @@ The project will separate the host update tool from the device simulator so that
 
 ## Current Status
 
-Repository safeguards, initial requirements, and architecture planning are complete. Implementation has not started.
+Initial C++ implementation is in progress. The repository currently provides a reusable `DeviceVersion` library, a demo executable, and an automated behavior test registered with CTest. The secure update workflow and Python host tool have not been implemented yet.
+
+## Build and Test
+
+Configure the build directory with testing enabled:
+
+```bash
+cmake -S . -B build/cmake -DBUILD_TESTING=ON
+```
+
+Build the library, demo, and test executable:
+
+```bash
+cmake --build build/cmake
+```
+
+Run the demo:
+
+```bash
+./build/cmake/device_version_demo
+```
+
+Run the automated tests:
+
+```bash
+ctest --test-dir build/cmake --output-on-failure
+```
+
+Generated build files are stored under `build/` and excluded from version control by `.gitignore`.
 
 ## Public-Safety Boundary
 
