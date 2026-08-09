@@ -15,3 +15,14 @@ bool UpdateSession::start()
     state_ = UpdateState::Receiving;
     return true;
 }
+
+bool UpdateSession::finishReceiving()
+{
+    if (state_ != UpdateState::Receiving)
+    {
+        return false;
+    }
+
+    state_ = UpdateState::Verifying;
+    return true;
+}

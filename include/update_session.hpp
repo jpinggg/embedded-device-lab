@@ -3,7 +3,8 @@
 enum class UpdateState
 {
     Idle,
-    Receiving
+    Receiving,
+    Verifying
 };
 
 class UpdateSession
@@ -11,6 +12,7 @@ class UpdateSession
 public:
     UpdateState state() const;
     bool start();
+    bool finishReceiving();
 
 private:
     UpdateState state_{UpdateState::Idle};

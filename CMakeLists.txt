@@ -94,7 +94,7 @@ if(BUILD_TESTING)
     )
 
     add_test(
-        NAME update_session_start_behavior
+        NAME update_session_behavior
         COMMAND update_session_test
     )
 endif()

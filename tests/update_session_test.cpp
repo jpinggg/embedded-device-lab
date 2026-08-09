@@ -36,5 +36,43 @@ int main()
         return 1;
     }
 
+    UpdateSession idleSession{};
+
+    if (idleSession.finishReceiving())
+    {
+        std::cerr << "Expected finishReceiving from Idle to fail\n";
+        return 1;
+    }
+
+    if (idleSession.state() != UpdateState::Idle)
+    {
+        std::cerr << "Expected rejected finishReceiving to preserve Idle state\n";
+        return 1;
+    }
+
+    if (!session.finishReceiving())
+    {
+        std::cerr << "Expected finishReceiving from Receiving to succeed\n";
+        return 1;
+    }
+
+    if (session.state() != UpdateState::Verifying)
+    {
+        std::cerr << "Expected state to be Verifying after finishReceiving\n";
+        return 1;
+    }
+
+    if (session.finishReceiving())
+    {
+        std::cerr << "Expected second finishReceiving to fail\n";
+        return 1;
+    }
+
+    if (session.state() != UpdateState::Verifying)
+    {
+        std::cerr << "Expected rejected finishReceiving to preserve Verifying state\n";
+        return 1;
+    }
+
     return 0;
 }
