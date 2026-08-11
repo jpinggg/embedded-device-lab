@@ -74,5 +74,67 @@ int main()
         return 1;
     }
 
+    if (idleSession.finishVerification(true))
+    {
+        std::cerr << "Expected finishVerification from Idle to fail\n";
+        return 1;
+    }
+
+    if (idleSession.state() != UpdateState::Idle)
+    {
+        std::cerr << "Expected rejected verification to preserve Idle state\n";
+        return 1;
+    }
+
+    if (!session.finishVerification(true))
+    {
+        std::cerr << "Expected passed verification result to be accepted\n";
+        return 1;
+    }
+
+    if (session.state() != UpdateState::ReadyToActivate)
+    {
+        std::cerr << "Expected passed verification to reach ReadyToActivate\n";
+        return 1;
+    }
+
+    UpdateSession failedSession{};
+
+    if (!failedSession.start())
+    {
+        std::cerr << "Expected failed-session setup to start successfully\n";
+        return 1;
+    }
+
+    if (!failedSession.finishReceiving())
+    {
+        std::cerr << "Expected failed-session setup to reach Verifying\n";
+        return 1;
+    }
+
+    if (!failedSession.finishVerification(false))
+    {
+        std::cerr << "Expected failed verification result to be accepted\n";
+        return 1;
+    }
+
+    if (failedSession.state() != UpdateState::Failed)
+    {
+        std::cerr << "Expected failed verification to reach Failed\n";
+        return 1;
+    }
+
+    if (failedSession.finishVerification(true))
+    {
+        std::cerr << "Expected repeated verification result to be rejected\n";
+        return 1;
+    }
+
+    if (failedSession.state() != UpdateState::Failed)
+    {
+        std::cerr << "Expected rejected result to preserve Failed state\n";
+        return 1;
+    }
+
     return 0;
 }

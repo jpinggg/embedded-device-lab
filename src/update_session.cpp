@@ -26,3 +26,22 @@ bool UpdateSession::finishReceiving()
     state_ = UpdateState::Verifying;
     return true;
 }
+
+bool UpdateSession::finishVerification(bool passed)
+{
+    if (state_ != UpdateState::Verifying)
+    {
+        return false;
+    }
+
+    if (passed)
+    {
+        state_ = UpdateState::ReadyToActivate;
+    }
+    else
+    {
+        state_ = UpdateState::Failed;
+    }
+
+    return true;
+}
