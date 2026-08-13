@@ -30,6 +30,11 @@ target_include_directories(update_session
     include
 )
 
+target_link_libraries(update_session
+    PUBLIC
+    device_version
+)
+
 target_compile_features(update_session PUBLIC cxx_std_17)
 
 target_compile_options(update_session

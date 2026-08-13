@@ -1,5 +1,7 @@
 #include "update_session.hpp"
 
+#include "device_version.hpp"
+
 #include <iostream>
 
 int main()
@@ -12,7 +14,21 @@ int main()
         return 1;
     }
 
-    if (!session.start())
+    UpdateSession emptyVersionSession{};
+
+    if (emptyVersionSession.start(""))
+    {
+        std::cerr << "Expected empty pending version to be rejected\n";
+        return 1;
+    }
+
+    if (emptyVersionSession.state() != UpdateState::Idle)
+    {
+        std::cerr << "Expected rejected empty version to preserve Idle state\n";
+        return 1;
+    }
+
+    if (!session.start("v2.0"))
     {
         std::cerr << "Expected first start to succeed\n";
         return 1;
@@ -24,7 +40,7 @@ int main()
         return 1;
     }
 
-    if (session.start())
+    if (session.start("v3.0"))
     {
         std::cerr << "Expected second start to fail\n";
         return 1;
@@ -100,7 +116,7 @@ int main()
 
     UpdateSession failedSession{};
 
-    if (!failedSession.start())
+    if (!failedSession.start("v3.0"))
     {
         std::cerr << "Expected failed-session setup to start successfully\n";
         return 1;
@@ -133,6 +149,64 @@ int main()
     if (failedSession.state() != UpdateState::Failed)
     {
         std::cerr << "Expected rejected result to preserve Failed state\n";
+        return 1;
+    }
+
+    DeviceVersion idleActiveVersion{"v1.0"};
+
+    if (idleSession.activate(idleActiveVersion))
+    {
+        std::cerr << "Expected activation from Idle to be rejected\n";
+        return 1;
+    }
+
+    if (idleSession.state() != UpdateState::Idle)
+    {
+        std::cerr << "Expected rejected activation to preserve Idle state\n";
+        return 1;
+    }
+
+    if (idleActiveVersion.value() != "v1.0")
+    {
+        std::cerr << "Expected rejected activation to preserve active version\n";
+        return 1;
+    }
+
+    DeviceVersion activeVersion{"v1.0"};
+
+    if (!session.activate(activeVersion))
+    {
+        std::cerr << "Expected activation from ReadyToActivate to succeed\n";
+        return 1;
+    }
+
+    if (session.state() != UpdateState::Active)
+    {
+        std::cerr << "Expected successful activation to reach Active\n";
+        return 1;
+    }
+
+    if (activeVersion.value() != "v2.0")
+    {
+        std::cerr << "Expected successful activation to install v2.0\n";
+        return 1;
+    }
+
+    if (session.activate(activeVersion))
+    {
+        std::cerr << "Expected repeated activation to be rejected\n";
+        return 1;
+    }
+
+    if (session.state() != UpdateState::Active)
+    {
+        std::cerr << "Expected rejected activation to preserve Active state\n";
+        return 1;
+    }
+
+    if (activeVersion.value() != "v2.0")
+    {
+        std::cerr << "Expected rejected activation to preserve active version\n";
         return 1;
     }
 

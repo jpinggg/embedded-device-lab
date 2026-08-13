@@ -1,17 +1,20 @@
 #include "update_session.hpp"
 
+#include "device_version.hpp"
+
 UpdateState UpdateSession::state() const
 {
     return state_;
 }
 
-bool UpdateSession::start()
+bool UpdateSession::start(const std::string& pendingVersion)
 {
-    if (state_ != UpdateState::Idle)
+    if (state_ != UpdateState::Idle || pendingVersion.empty())
     {
         return false;
     }
 
+    pendingVersion_ = pendingVersion;
     state_ = UpdateState::Receiving;
     return true;
 }
@@ -43,5 +46,23 @@ bool UpdateSession::finishVerification(bool passed)
         state_ = UpdateState::Failed;
     }
 
+    return true;
+}
+
+bool UpdateSession::activate(DeviceVersion& activeVersion)
+{
+    if (state_ != UpdateState::ReadyToActivate)
+    {
+        return false;
+    }
+
+    if (pendingVersion_.empty())
+    {
+        state_ = UpdateState::Failed;
+        return false;
+    }
+
+    activeVersion.update(pendingVersion_);
+    state_ = UpdateState::Active;
     return true;
 }
