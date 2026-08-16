@@ -210,5 +210,145 @@ int main()
         return 1;
     }
 
+    if (idleSession.cancel())
+    {
+        std::cerr << "Expected cancellation from Idle to be rejected\n";
+        return 1;
+    }
+
+    if (idleSession.state() != UpdateState::Idle)
+    {
+        std::cerr << "Expected rejected cancellation to preserve Idle state\n";
+        return 1;
+    }
+
+    if (idleActiveVersion.value() != "v1.0")
+    {
+        std::cerr << "Expected rejected cancellation to preserve active version\n";
+        return 1;
+    }
+
+    UpdateSession receivingCancelSession{};
+    DeviceVersion receivingActiveVersion{"v1.0"};
+
+    if (!receivingCancelSession.start("v2.0"))
+    {
+        std::cerr << "Expected receiving-cancel setup to start successfully\n";
+        return 1;
+    }
+
+    if (!receivingCancelSession.cancel())
+    {
+        std::cerr << "Expected cancellation from Receiving to succeed\n";
+        return 1;
+    }
+
+    if (receivingCancelSession.state() != UpdateState::Failed)
+    {
+        std::cerr << "Expected Receiving cancellation to reach Failed\n";
+        return 1;
+    }
+
+    if (receivingActiveVersion.value() != "v1.0")
+    {
+        std::cerr << "Expected Receiving cancellation to preserve active version\n";
+        return 1;
+    }
+
+    UpdateSession verifyingCancelSession{};
+
+    if (!verifyingCancelSession.start("v3.0"))
+    {
+        std::cerr << "Expected verifying-cancel setup to start successfully\n";
+        return 1;
+    }
+
+    if (!verifyingCancelSession.finishReceiving())
+    {
+        std::cerr << "Expected verifying-cancel setup to reach Verifying\n";
+        return 1;
+    }
+
+    if (!verifyingCancelSession.cancel())
+    {
+        std::cerr << "Expected cancellation from Verifying to succeed\n";
+        return 1;
+    }
+
+    if (verifyingCancelSession.state() != UpdateState::Failed)
+    {
+        std::cerr << "Expected Verifying cancellation to reach Failed\n";
+        return 1;
+    }
+
+    UpdateSession readyCancelSession{};
+    DeviceVersion readyActiveVersion{"v1.0"};
+
+    if (!readyCancelSession.start("v4.0"))
+    {
+        std::cerr << "Expected ready-cancel setup to start successfully\n";
+        return 1;
+    }
+
+    if (!readyCancelSession.finishReceiving())
+    {
+        std::cerr << "Expected ready-cancel setup to reach Verifying\n";
+        return 1;
+    }
+
+    if (!readyCancelSession.finishVerification(true))
+    {
+        std::cerr << "Expected ready-cancel setup to reach ReadyToActivate\n";
+        return 1;
+    }
+
+    if (!readyCancelSession.cancel())
+    {
+        std::cerr << "Expected cancellation from ReadyToActivate to succeed\n";
+        return 1;
+    }
+
+    if (readyCancelSession.state() != UpdateState::Failed)
+    {
+        std::cerr << "Expected ReadyToActivate cancellation to reach Failed\n";
+        return 1;
+    }
+
+    if (readyActiveVersion.value() != "v1.0")
+    {
+        std::cerr << "Expected cancellation to preserve active version\n";
+        return 1;
+    }
+
+    if (session.cancel())
+    {
+        std::cerr << "Expected cancellation from Active to be rejected\n";
+        return 1;
+    }
+
+    if (session.state() != UpdateState::Active)
+    {
+        std::cerr << "Expected rejected cancellation to preserve Active state\n";
+        return 1;
+    }
+
+    if (activeVersion.value() != "v2.0")
+    {
+        std::cerr << "Expected rejected cancellation to preserve active version\n";
+        return 1;
+    }
+
+    if (failedSession.cancel())
+    {
+        std::cerr << "Expected cancellation from Failed to be rejected\n";
+        return 1;
+    }
+
+    if (failedSession.state() != UpdateState::Failed)
+    {
+        std::cerr << "Expected rejected cancellation to preserve Failed state\n";
+        return 1;
+    }
+
     return 0;
 }

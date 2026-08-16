@@ -22,6 +22,7 @@ public:
     bool finishReceiving();
     bool finishVerification(bool passed);
     bool activate(DeviceVersion& activeVersion);
+    bool cancel();
 
 private:
     UpdateState state_{UpdateState::Idle};

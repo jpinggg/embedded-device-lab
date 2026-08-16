@@ -66,3 +66,17 @@ bool UpdateSession::activate(DeviceVersion& activeVersion)
     state_ = UpdateState::Active;
     return true;
 }
+
+bool UpdateSession::cancel()
+{
+    if (state_ != UpdateState::Receiving &&
+        state_ != UpdateState::Verifying &&
+        state_ != UpdateState::ReadyToActivate)
+    {
+        return false;
+    }
+
+    pendingVersion_.clear();
+    state_ = UpdateState::Failed;
+    return true;
+}
