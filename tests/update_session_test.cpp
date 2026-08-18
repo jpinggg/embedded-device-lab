@@ -350,5 +350,142 @@ int main()
         return 1;
     }
 
+    if (idleSession.resetSession())
+    {
+        std::cerr << "Expected resetSession from Idle to be rejected\n";
+        return 1;
+    }
+
+    if (idleSession.state() != UpdateState::Idle)
+    {
+        std::cerr << "Expected rejected reset to preserve Idle state\n";
+        return 1;
+    }
+
+    UpdateSession receivingResetSession{};
+
+    if (!receivingResetSession.start("v5.0"))
+    {
+        std::cerr << "Expected receiving-reset setup to start successfully\n";
+        return 1;
+    }
+
+    if (receivingResetSession.resetSession())
+    {
+        std::cerr << "Expected resetSession from Receiving to be rejected\n";
+        return 1;
+    }
+
+    if (receivingResetSession.state() != UpdateState::Receiving)
+    {
+        std::cerr << "Expected rejected reset to preserve Receiving state\n";
+        return 1;
+    }
+
+    UpdateSession verifyingResetSession{};
+
+    if (!verifyingResetSession.start("v5.0") ||
+        !verifyingResetSession.finishReceiving())
+    {
+        std::cerr << "Expected verifying-reset setup to reach Verifying\n";
+        return 1;
+    }
+
+    if (verifyingResetSession.resetSession())
+    {
+        std::cerr << "Expected resetSession from Verifying to be rejected\n";
+        return 1;
+    }
+
+    if (verifyingResetSession.state() != UpdateState::Verifying)
+    {
+        std::cerr << "Expected rejected reset to preserve Verifying state\n";
+        return 1;
+    }
+
+    UpdateSession readyResetSession{};
+
+    if (!readyResetSession.start("v5.0") ||
+        !readyResetSession.finishReceiving() ||
+        !readyResetSession.finishVerification(true))
+    {
+        std::cerr << "Expected ready-reset setup to reach ReadyToActivate\n";
+        return 1;
+    }
+
+    if (readyResetSession.resetSession())
+    {
+        std::cerr << "Expected resetSession from ReadyToActivate to be rejected\n";
+        return 1;
+    }
+
+    if (readyResetSession.state() != UpdateState::ReadyToActivate)
+    {
+        std::cerr << "Expected rejected reset to preserve ReadyToActivate state\n";
+        return 1;
+    }
+
+    if (!session.resetSession())
+    {
+        std::cerr << "Expected resetSession from Active to succeed\n";
+        return 1;
+    }
+
+    if (session.state() != UpdateState::Idle)
+    {
+        std::cerr << "Expected Active reset to reach Idle\n";
+        return 1;
+    }
+
+    if (activeVersion.value() != "v2.0")
+    {
+        std::cerr << "Expected Active reset to preserve installed version\n";
+        return 1;
+    }
+
+    if (!session.start("v3.0"))
+    {
+        std::cerr << "Expected a new update after Active reset to start\n";
+        return 1;
+    }
+
+    if (session.state() != UpdateState::Receiving)
+    {
+        std::cerr << "Expected reused Active session to reach Receiving\n";
+        return 1;
+    }
+
+    DeviceVersion failedActiveVersion{"v1.0"};
+
+    if (!failedSession.resetSession())
+    {
+        std::cerr << "Expected resetSession from Failed to succeed\n";
+        return 1;
+    }
+
+    if (failedSession.state() != UpdateState::Idle)
+    {
+        std::cerr << "Expected Failed reset to reach Idle\n";
+        return 1;
+    }
+
+    if (failedActiveVersion.value() != "v1.0")
+    {
+        std::cerr << "Expected Failed reset to preserve installed version\n";
+        return 1;
+    }
+
+    if (!failedSession.start("v4.0"))
+    {
+        std::cerr << "Expected a new update after Failed reset to start\n";
+        return 1;
+    }
+
+    if (failedSession.state() != UpdateState::Receiving)
+    {
+        std::cerr << "Expected reused Failed session to reach Receiving\n";
+        return 1;
+    }
+
     return 0;
 }

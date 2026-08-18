@@ -23,6 +23,7 @@ public:
     bool finishVerification(bool passed);
     bool activate(DeviceVersion& activeVersion);
     bool cancel();
+    bool resetSession();
 
 private:
     UpdateState state_{UpdateState::Idle};

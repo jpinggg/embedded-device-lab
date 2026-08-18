@@ -80,3 +80,16 @@ bool UpdateSession::cancel()
     state_ = UpdateState::Failed;
     return true;
 }
+
+bool UpdateSession::resetSession()
+{
+    if (state_ != UpdateState::Active &&
+        state_ != UpdateState::Failed)
+    {
+        return false;
+    }
+
+    pendingVersion_.clear();
+    state_ = UpdateState::Idle;
+    return true;
+}
