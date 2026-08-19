@@ -3,6 +3,20 @@
 #include "device_version.hpp"
 
 #include <iostream>
+#include <string>
+
+namespace
+{
+
+bool reachVerifying(
+    UpdateSession& session,
+    const std::string& pendingVersion)
+{
+    return session.start(pendingVersion) &&
+           session.finishReceiving();
+}
+
+}
 
 int main()
 {
@@ -116,13 +130,7 @@ int main()
 
     UpdateSession failedSession{};
 
-    if (!failedSession.start("v3.0"))
-    {
-        std::cerr << "Expected failed-session setup to start successfully\n";
-        return 1;
-    }
-
-    if (!failedSession.finishReceiving())
+    if (!reachVerifying(failedSession, "v3.0"))
     {
         std::cerr << "Expected failed-session setup to reach Verifying\n";
         return 1;
@@ -257,13 +265,7 @@ int main()
 
     UpdateSession verifyingCancelSession{};
 
-    if (!verifyingCancelSession.start("v3.0"))
-    {
-        std::cerr << "Expected verifying-cancel setup to start successfully\n";
-        return 1;
-    }
-
-    if (!verifyingCancelSession.finishReceiving())
+    if (!reachVerifying(verifyingCancelSession, "v3.0"))
     {
         std::cerr << "Expected verifying-cancel setup to reach Verifying\n";
         return 1;
@@ -284,13 +286,7 @@ int main()
     UpdateSession readyCancelSession{};
     DeviceVersion readyActiveVersion{"v1.0"};
 
-    if (!readyCancelSession.start("v4.0"))
-    {
-        std::cerr << "Expected ready-cancel setup to start successfully\n";
-        return 1;
-    }
-
-    if (!readyCancelSession.finishReceiving())
+    if (!reachVerifying(readyCancelSession, "v4.0"))
     {
         std::cerr << "Expected ready-cancel setup to reach Verifying\n";
         return 1;
@@ -384,8 +380,7 @@ int main()
 
     UpdateSession verifyingResetSession{};
 
-    if (!verifyingResetSession.start("v5.0") ||
-        !verifyingResetSession.finishReceiving())
+    if (!reachVerifying(verifyingResetSession, "v5.0"))
     {
         std::cerr << "Expected verifying-reset setup to reach Verifying\n";
         return 1;
@@ -405,8 +400,7 @@ int main()
 
     UpdateSession readyResetSession{};
 
-    if (!readyResetSession.start("v5.0") ||
-        !readyResetSession.finishReceiving() ||
+    if (!reachVerifying(readyResetSession, "v5.0") ||
         !readyResetSession.finishVerification(true))
     {
         std::cerr << "Expected ready-reset setup to reach ReadyToActivate\n";
