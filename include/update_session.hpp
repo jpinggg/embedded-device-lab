@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 
 class DeviceVersion;
@@ -18,7 +19,10 @@ class UpdateSession
 {
 public:
     UpdateState state() const;
-    bool start(const std::string& pendingVersion);
+    std::size_t expectedBytes() const;
+    std::size_t receivedBytes() const;
+    bool start(const std::string& pendingVersion, std::size_t expectedBytes);
+    bool receiveChunk(std::size_t chunkBytes);
     bool finishReceiving();
     bool finishVerification(bool passed);
     bool activate(DeviceVersion& activeVersion);
@@ -28,4 +32,6 @@ public:
 private:
     UpdateState state_{UpdateState::Idle};
     std::string pendingVersion_{};
+    std::size_t expectedBytes_{0};
+    std::size_t receivedBytes_{0};
 };

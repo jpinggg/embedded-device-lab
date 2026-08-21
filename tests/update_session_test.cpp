@@ -2,6 +2,7 @@
 
 #include "device_version.hpp"
 
+#include <cstddef>
 #include <iostream>
 #include <string>
 
@@ -12,7 +13,10 @@ bool reachVerifying(
     UpdateSession& session,
     const std::string& pendingVersion)
 {
-    return session.start(pendingVersion) &&
+    constexpr std::size_t imageSize{1000};
+
+    return session.start(pendingVersion, imageSize) &&
+           session.receiveChunk(imageSize) &&
            session.finishReceiving();
 }
 
@@ -28,9 +32,15 @@ int main()
         return 1;
     }
 
+    if (session.expectedBytes() != 0 || session.receivedBytes() != 0)
+    {
+        std::cerr << "Expected initial byte counts to be zero\n";
+        return 1;
+    }
+
     UpdateSession emptyVersionSession{};
 
-    if (emptyVersionSession.start(""))
+    if (emptyVersionSession.start("", 1000))
     {
         std::cerr << "Expected empty pending version to be rejected\n";
         return 1;
@@ -42,7 +52,30 @@ int main()
         return 1;
     }
 
-    if (!session.start("v2.0"))
+    if (emptyVersionSession.expectedBytes() != 0 ||
+        emptyVersionSession.receivedBytes() != 0)
+    {
+        std::cerr << "Expected rejected empty version to preserve byte counts\n";
+        return 1;
+    }
+
+    UpdateSession zeroSizeSession{};
+
+    if (zeroSizeSession.start("v2.0", 0))
+    {
+        std::cerr << "Expected zero image size to be rejected\n";
+        return 1;
+    }
+
+    if (zeroSizeSession.state() != UpdateState::Idle ||
+        zeroSizeSession.expectedBytes() != 0 ||
+        zeroSizeSession.receivedBytes() != 0)
+    {
+        std::cerr << "Expected rejected zero size to preserve Idle session\n";
+        return 1;
+    }
+
+    if (!session.start("v2.0", 1000))
     {
         std::cerr << "Expected first start to succeed\n";
         return 1;
@@ -54,7 +87,13 @@ int main()
         return 1;
     }
 
-    if (session.start("v3.0"))
+    if (session.expectedBytes() != 1000 || session.receivedBytes() != 0)
+    {
+        std::cerr << "Expected accepted start to initialize byte counts\n";
+        return 1;
+    }
+
+    if (session.start("v3.0", 2000))
     {
         std::cerr << "Expected second start to fail\n";
         return 1;
@@ -66,7 +105,27 @@ int main()
         return 1;
     }
 
+    if (session.expectedBytes() != 1000 || session.receivedBytes() != 0)
+    {
+        std::cerr << "Expected rejected start to preserve byte counts\n";
+        return 1;
+    }
+
     UpdateSession idleSession{};
+
+    if (idleSession.receiveChunk(100))
+    {
+        std::cerr << "Expected receiveChunk from Idle to fail\n";
+        return 1;
+    }
+
+    if (idleSession.state() != UpdateState::Idle ||
+        idleSession.expectedBytes() != 0 ||
+        idleSession.receivedBytes() != 0)
+    {
+        std::cerr << "Expected rejected Idle chunk to preserve session\n";
+        return 1;
+    }
 
     if (idleSession.finishReceiving())
     {
@@ -80,9 +139,86 @@ int main()
         return 1;
     }
 
+    if (session.receiveChunk(0))
+    {
+        std::cerr << "Expected zero-byte chunk to be rejected\n";
+        return 1;
+    }
+
+    if (session.state() != UpdateState::Receiving ||
+        session.receivedBytes() != 0)
+    {
+        std::cerr << "Expected rejected zero-byte chunk to preserve session\n";
+        return 1;
+    }
+
+    if (!session.receiveChunk(400))
+    {
+        std::cerr << "Expected first chunk to be accepted\n";
+        return 1;
+    }
+
+    if (session.state() != UpdateState::Receiving ||
+        session.receivedBytes() != 400)
+    {
+        std::cerr << "Expected first chunk to advance received bytes\n";
+        return 1;
+    }
+
+    if (session.finishReceiving())
+    {
+        std::cerr << "Expected incomplete reception to reject finishReceiving\n";
+        return 1;
+    }
+
+    if (session.state() != UpdateState::Receiving ||
+        session.receivedBytes() != 400)
+    {
+        std::cerr << "Expected incomplete finish to preserve session\n";
+        return 1;
+    }
+
+    if (session.receiveChunk(601))
+    {
+        std::cerr << "Expected oversized chunk to be rejected\n";
+        return 1;
+    }
+
+    if (session.state() != UpdateState::Receiving ||
+        session.receivedBytes() != 400)
+    {
+        std::cerr << "Expected rejected oversized chunk to preserve session\n";
+        return 1;
+    }
+
+    if (!session.receiveChunk(600))
+    {
+        std::cerr << "Expected final chunk to be accepted\n";
+        return 1;
+    }
+
+    if (session.receivedBytes() != 1000)
+    {
+        std::cerr << "Expected final chunk to complete received bytes\n";
+        return 1;
+    }
+
     if (!session.finishReceiving())
     {
         std::cerr << "Expected finishReceiving from Receiving to succeed\n";
+        return 1;
+    }
+
+    if (session.receiveChunk(1))
+    {
+        std::cerr << "Expected receiveChunk from Verifying to fail\n";
+        return 1;
+    }
+
+    if (session.state() != UpdateState::Verifying ||
+        session.receivedBytes() != 1000)
+    {
+        std::cerr << "Expected rejected Verifying chunk to preserve session\n";
         return 1;
     }
 
@@ -239,7 +375,7 @@ int main()
     UpdateSession receivingCancelSession{};
     DeviceVersion receivingActiveVersion{"v1.0"};
 
-    if (!receivingCancelSession.start("v2.0"))
+    if (!receivingCancelSession.start("v2.0", 1000))
     {
         std::cerr << "Expected receiving-cancel setup to start successfully\n";
         return 1;
@@ -360,7 +496,7 @@ int main()
 
     UpdateSession receivingResetSession{};
 
-    if (!receivingResetSession.start("v5.0"))
+    if (!receivingResetSession.start("v5.0", 1000))
     {
         std::cerr << "Expected receiving-reset setup to start successfully\n";
         return 1;
@@ -437,7 +573,7 @@ int main()
         return 1;
     }
 
-    if (!session.start("v3.0"))
+    if (!session.start("v3.0", 1000))
     {
         std::cerr << "Expected a new update after Active reset to start\n";
         return 1;
@@ -469,7 +605,7 @@ int main()
         return 1;
     }
 
-    if (!failedSession.start("v4.0"))
+    if (!failedSession.start("v4.0", 1000))
     {
         std::cerr << "Expected a new update after Failed reset to start\n";
         return 1;

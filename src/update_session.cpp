@@ -7,21 +7,51 @@ UpdateState UpdateSession::state() const
     return state_;
 }
 
-bool UpdateSession::start(const std::string& pendingVersion)
+std::size_t UpdateSession::expectedBytes() const
 {
-    if (state_ != UpdateState::Idle || pendingVersion.empty())
+    return expectedBytes_;
+}
+
+std::size_t UpdateSession::receivedBytes() const
+{
+    return receivedBytes_;
+}
+
+bool UpdateSession::start(
+    const std::string& pendingVersion,
+    std::size_t expectedBytes)
+{
+    if (state_ != UpdateState::Idle ||
+        pendingVersion.empty() ||
+        expectedBytes == 0)
     {
         return false;
     }
 
     pendingVersion_ = pendingVersion;
+    expectedBytes_ = expectedBytes;
+    receivedBytes_ = 0;
     state_ = UpdateState::Receiving;
+    return true;
+}
+
+bool UpdateSession::receiveChunk(std::size_t chunkBytes)
+{
+    if (state_ != UpdateState::Receiving ||
+        chunkBytes == 0 ||
+        chunkBytes > expectedBytes_ - receivedBytes_)
+    {
+        return false;
+    }
+
+    receivedBytes_ += chunkBytes;
     return true;
 }
 
 bool UpdateSession::finishReceiving()
 {
-    if (state_ != UpdateState::Receiving)
+    if (state_ != UpdateState::Receiving ||
+        receivedBytes_ != expectedBytes_)
     {
         return false;
     }
@@ -77,6 +107,8 @@ bool UpdateSession::cancel()
     }
 
     pendingVersion_.clear();
+    expectedBytes_ = 0;
+    receivedBytes_ = 0;
     state_ = UpdateState::Failed;
     return true;
 }
@@ -90,6 +122,8 @@ bool UpdateSession::resetSession()
     }
 
     pendingVersion_.clear();
+    expectedBytes_ = 0;
+    receivedBytes_ = 0;
     state_ = UpdateState::Idle;
     return true;
 }
