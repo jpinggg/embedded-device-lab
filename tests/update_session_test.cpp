@@ -617,5 +617,80 @@ int main()
         return 1;
     }
 
+    UpdateSession verificationReasonSession{};
+
+    if (verificationReasonSession.failureReason() !=
+        UpdateFailureReason::None)
+    {
+        std::cerr << "Expected a new session to have no failure reason\n";
+        return 1;
+    }
+
+    if (!reachVerifying(verificationReasonSession, "v6.0"))
+    {
+        std::cerr << "Expected reason-session setup to reach Verifying\n";
+        return 1;
+    }
+
+    if (!verificationReasonSession.finishVerification(false))
+    {
+        std::cerr << "Expected failed verification to be accepted\n";
+        return 1;
+    }
+
+    if (verificationReasonSession.failureReason() !=
+        UpdateFailureReason::VerificationFailed)
+    {
+        std::cerr << "Expected verification failure reason\n";
+        return 1;
+    }
+
+    if (verificationReasonSession.cancel())
+    {
+        std::cerr << "Expected cancellation from Failed to be rejected\n";
+        return 1;
+    }
+
+    if (verificationReasonSession.failureReason() !=
+        UpdateFailureReason::VerificationFailed)
+    {
+        std::cerr << "Expected rejected cancellation to preserve reason\n";
+        return 1;
+    }
+
+    if (!verificationReasonSession.resetSession())
+    {
+        std::cerr << "Expected failed session reset to succeed\n";
+        return 1;
+    }
+
+    if (verificationReasonSession.failureReason() !=
+        UpdateFailureReason::None)
+    {
+        std::cerr << "Expected reset to clear failure reason\n";
+        return 1;
+    }
+
+    UpdateSession cancellationReasonSession{};
+
+    if (!cancellationReasonSession.start("v7.0", 1000))
+    {
+        std::cerr << "Expected cancellation-reason setup to start\n";
+        return 1;
+    }
+
+    if (!cancellationReasonSession.cancel())
+    {
+        std::cerr << "Expected cancellation to succeed\n";
+        return 1;
+    }
+
+    if (cancellationReasonSession.failureReason() !=
+        UpdateFailureReason::Cancelled)
+    {
+        std::cerr << "Expected cancellation failure reason\n";
+        return 1;
+    }
+
     return 0;
 }

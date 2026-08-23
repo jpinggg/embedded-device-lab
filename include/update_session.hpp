@@ -15,10 +15,18 @@ enum class UpdateState
     Failed
 };
 
+enum class UpdateFailureReason
+{
+    None,
+    Cancelled,
+    VerificationFailed
+};
+
 class UpdateSession
 {
 public:
     UpdateState state() const;
+    UpdateFailureReason failureReason() const;
     std::size_t expectedBytes() const;
     std::size_t receivedBytes() const;
     bool start(const std::string& pendingVersion, std::size_t expectedBytes);
@@ -31,6 +39,7 @@ public:
 
 private:
     UpdateState state_{UpdateState::Idle};
+    UpdateFailureReason failureReason_{UpdateFailureReason::None};
     std::string pendingVersion_{};
     std::size_t expectedBytes_{0};
     std::size_t receivedBytes_{0};

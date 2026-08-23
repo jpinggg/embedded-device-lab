@@ -7,6 +7,11 @@ UpdateState UpdateSession::state() const
     return state_;
 }
 
+UpdateFailureReason UpdateSession::failureReason() const
+{
+    return failureReason_;
+}
+
 std::size_t UpdateSession::expectedBytes() const
 {
     return expectedBytes_;
@@ -73,6 +78,7 @@ bool UpdateSession::finishVerification(bool passed)
     }
     else
     {
+        failureReason_ = UpdateFailureReason::VerificationFailed;
         state_ = UpdateState::Failed;
     }
 
@@ -109,6 +115,7 @@ bool UpdateSession::cancel()
     pendingVersion_.clear();
     expectedBytes_ = 0;
     receivedBytes_ = 0;
+    failureReason_ = UpdateFailureReason::Cancelled;
     state_ = UpdateState::Failed;
     return true;
 }
@@ -124,6 +131,7 @@ bool UpdateSession::resetSession()
     pendingVersion_.clear();
     expectedBytes_ = 0;
     receivedBytes_ = 0;
+    failureReason_ = UpdateFailureReason::None;
     state_ = UpdateState::Idle;
     return true;
 }
