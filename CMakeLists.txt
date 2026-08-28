@@ -60,6 +60,22 @@ target_compile_options(device_version_demo
     -Wpedantic
 )
 
+add_executable(update_simulator_cli
+    src/update_simulator_cli.cpp
+)
+
+target_link_libraries(update_simulator_cli
+    PRIVATE
+    update_session
+)
+
+target_compile_options(update_simulator_cli
+    PRIVATE
+    -Wall
+    -Wextra
+    -Wpedantic
+)
+
 if(BUILD_TESTING)
     add_executable(device_version_test
         tests/device_version_test.cpp
