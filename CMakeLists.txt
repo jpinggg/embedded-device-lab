@@ -77,6 +77,9 @@ target_compile_options(update_simulator_cli
 )
 
 if(BUILD_TESTING)
+
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
     add_executable(device_version_test
         tests/device_version_test.cpp
     )
@@ -118,4 +121,19 @@ if(BUILD_TESTING)
         NAME update_session_behavior
         COMMAND update_session_test
     )
+
+    add_test(
+        NAME update_host_probe_behavior
+        COMMAND
+            ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/update_host_probe.py
+            $<TARGET_FILE:update_simulator_cli>
+    )
+
+    set_tests_properties(
+        update_host_probe_behavior
+        PROPERTIES
+        TIMEOUT 5
+    )
+
 endif()
